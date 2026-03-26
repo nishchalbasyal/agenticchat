@@ -1,5 +1,6 @@
 import streamlit as st
-from langraph_tool_backend import chatbot, retrive_all_threads
+from langraph_tool_backend import chatbot, retrive_all_threads, generate_title
+from shared_checkpoint import save_title, get_title, get_all_titles
 from langchain_core.messages import  HumanMessage, AIMessage, ToolMessage
 import uuid
 
@@ -64,8 +65,14 @@ if st.sidebar.button('New Chat'):
 
 st.sidebar.header('Chats')
 
+# Get all titles for display
+thread_titles = get_all_titles()
+
 for thread_id in st.session_state['chat_threads'][::-1]:
-        if st.sidebar.button(str(thread_id)):
+        # Get title or use thread_id as fallback
+        display_title = thread_titles.get(thread_id, f"Chat ({thread_id[:8]}...)")
+        
+        if st.sidebar.button(display_title, key=f"chat_{thread_id}"):
             st.session_state['thread_id'] = thread_id
             messages = load_converstation(thread_id)
             
@@ -97,6 +104,13 @@ if user_input:
     with st.chat_message("user"):
         st.text(user_input)
 
+    # Generate and save title if this is the first message
+    if len(st.session_state['message_history']) == 1:  # Only user message, no assistant response yet
+        try:
+            title = generate_title(user_input)
+            save_title(st.session_state['thread_id'], title)
+        except Exception as e:
+            print(f"Error generating title: {e}")
      
     # CONFIG = {'configurable':{'thread_id':str(st.session_state['thread_id'])}}
 
