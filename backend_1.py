@@ -3,8 +3,9 @@ from typing import TypedDict, Annotated
 from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.graph.message import add_messages
 from langchain_openrouter import ChatOpenRouter
+from langgraph.checkpoint.memory import MemorySaver
 from dotenv import load_dotenv
-from shared_checkpoint import checkpointer, save_title, get_title, get_all_titles
+
 
 load_dotenv()
 
@@ -27,6 +28,7 @@ def chat_node(state: ChatState):
     # response store state
     return {'messages': [response]}
 
+checkpointer = MemorySaver()
 
 graph = StateGraph(ChatState)
 
@@ -42,31 +44,3 @@ chatbot = graph.compile(checkpointer=checkpointer)
 #     {'messages': [HumanMessage(content='Which is the beautiful country in the World ?')]},
 #     stream_mode="messages"
 # )
-
-
-def retrive_all_threads():
-    all_threads = set()
-    for checkpoint in checkpointer.list(None):
-        all_threads.add(checkpoint.config['configurable']['thread_id'])
-        
-    return list(all_threads)
-
-
-def generate_title(user_message: str) -> str:
-    """Generate a 4-5 word title from the first user message"""
-    prompt = f"""Generate a very concise 4-5 word title for this conversation based on the user's first message. 
-Return ONLY the title, nothing else.
-
-User message: {user_message}"""
-    
-    try:
-        response = llm.invoke([HumanMessage(content=prompt)])
-        title = response.content.strip()
-        # Ensure title is not too long
-        words = title.split()
-        if len(words) > 8:
-            title = ' '.join(words[:8])
-        return title
-    except Exception as e:
-        print(f"Error generating title: {e}")
-        return user_message[:50]  # Fallback to first 50 chars of message

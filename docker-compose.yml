@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  langgraph-chatbot:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT}
+      - DEBUG=${DEBUG:-False}
+    env_file:
+      - .env
+    volumes:
+      - ./data:/code/data  # For persistent checkpoint storage
